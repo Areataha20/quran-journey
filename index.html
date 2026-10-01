@@ -35,11 +35,35 @@
             pointer-events: none;
             border-radius: 12px;
         }
+        /* تنسيق الآية الحالية أثناء التلاوة */
+        .active-ayah {
+            background-color: #fef08a !important;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(234, 179, 8, 0.5);
+            transition: all 0.3s ease;
+        }
     </style>
 </head>
 <body class="min-h-screen bg-sky-scene flex flex-col justify-between overflow-x-hidden relative text-slate-800">
 
     <audio id="quran-player" preload="none"></audio>
+
+    <!-- نافذة المصحف الكامل قراءة -->
+    <div id="full-quran-modal" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-2 md:p-4">
+        <div class="cloud rounded-3xl p-4 md:p-6 max-w-4xl w-full border-4 border-amber-400 shadow-2xl relative max-h-[95vh] flex flex-col">
+            <button onclick="closeFullQuranModal()" class="absolute top-4 left-4 w-10 h-10 bg-red-500 text-white font-bold rounded-full flex items-center justify-center text-xl shadow z-10">✕</button>
+            <div class="text-center mb-3 border-b-2 border-amber-200 pb-2 flex flex-wrap justify-between items-center gap-2">
+                <h3 class="text-xl md:text-2xl font-black text-amber-900 quran-font">📖 المصحف الشريف الكامل</h3>
+                <div class="flex gap-2 items-center">
+                    <select id="full-modal-surah-select" onchange="loadFullQuranSurah(this.value)" class="bg-amber-50 border-2 border-amber-400 font-bold text-slate-800 rounded-xl px-3 py-1 text-xs md:text-sm">
+                    </select>
+                </div>
+            </div>
+            <div id="full-quran-content" class="flex-1 overflow-y-auto p-4 md:p-6 bg-amber-50/90 rounded-2xl border border-amber-200 text-center quran-font text-2xl md:text-3xl leading-[2.8] text-slate-900 shadow-inner">
+                <div class="animate-pulse flex items-center justify-center h-full text-amber-600 font-bold">جاري تحميل سور المصحف الشريف... ⏳</div>
+            </div>
+        </div>
+    </div>
 
     <!-- نافذة تعديل بيانات البطل -->
     <div id="profile-modal" class="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
@@ -200,13 +224,16 @@
                     <span class="text-amber-500 text-xl">⭐</span>
                     <span class="font-extrabold text-slate-800" id="star-count">0</span>
                 </div>
+                <!-- أيقونة المصحف الكامل الخارجية -->
+                <button onclick="openFullQuranModal()" class="cloud rounded-2xl p-2.5 px-3 shadow-lg flex items-center gap-1.5 border-2 border-white font-bold text-amber-900 text-xs hover:bg-amber-50 transition" title="فتح المصحف الشريف الكامل قراءة">
+                    <span>📖</span> المصحف
+                </button>
                 <button onclick="openCertificateModal()" class="cloud rounded-2xl p-2.5 px-3 shadow-lg flex items-center gap-1.5 border-2 border-white font-bold text-amber-900 text-xs hover:bg-amber-50 transition">
                     <span>🏆</span> الشهادة
                 </button>
                 <button onclick="openReviewModal()" class="cloud rounded-2xl p-2.5 px-3 shadow-lg flex items-center gap-1.5 border-2 border-white font-bold text-emerald-800 text-xs hover:bg-amber-50 transition">
                     <span>🔄</span> المراجعة
                 </button>
-                <!-- أيقونة تطبيق ترتيل المحدثة بـ الرابط الآمن للمتاجر لتفادي خطأ العنصر -->
                 <a href="#" onclick="openTarteelApp(event)" class="cloud rounded-2xl p-2.5 px-3 shadow-lg flex items-center gap-1.5 border-2 border-white font-bold text-sky-700 text-xs hover:bg-sky-50 transition" title="فتح برنامج ترتيل أو التحميل من المتجر">
                     <span>📱</span> ترتيل
                 </a>
@@ -222,6 +249,8 @@
                     <option value="ar.husary">محمود خليل الحصري</option>
                     <option value="ar.minshawi">محمد صديق المنشاوي</option>
                     <option value="ar.alafasy">مشاري بن راشد العفاسي</option>
+                    <option value="ar.sudais">عبد الرحمن السديس</option>
+                    <option value="ar.shuraym">سعود الشريم</option>
                 </select>
             </div>
             <div class="flex items-center gap-1">
@@ -323,21 +352,18 @@
             renderSurahSelect(currentJuz);
             renderBlocks();
             checkSavedAlarm();
+            initFullQuranSurahSelect();
         };
 
-        // دالة آمنة لمعالجة فتح التطبيق أو المتجر لمنع ظهور خطأ "لم يتم العثور على العنصر"
         function openTarteelApp(event) {
             event.preventDefault();
             const userAgent = navigator.userAgent || navigator.vendor || window.opera;
-            
             const playStoreLink = "https://play.google.com/store/apps/details?id=com.tarteel.ai";
             const appStoreLink = "https://apps.apple.com/app/tarteel-ai/id1393699074";
-            
             let storeUrl = playStoreLink;
             if (/iPad|iPhone|iPod/.test(userAgent) && !window.MSStream) {
                 storeUrl = appStoreLink;
             }
-
             window.open(storeUrl, '_blank');
         }
 
@@ -439,7 +465,7 @@
             switchTab('read');
             document.getElementById('ayah-modal').classList.remove('hidden');
 
-            document.getElementById('modal-play-clip-btn').onclick = () => playAyatRange(surahId, start, end);
+            document.getElementById('modal-play-clip-btn').onclick = () => playAyatRangeWithSync(surahId, start, end, 'tab-read-content');
             document.getElementById('modal-play-full-btn').onclick = () => playFullSurah(surahId);
             document.getElementById('modal-complete-btn').onclick = () => {
                 if (!completedBlocks.includes(key)) {
@@ -462,7 +488,7 @@
                 const ayatList = quranData.data.ayahs.slice(start - 1, end);
                 const tafsirList = tafsirData.data.ayahs.slice(start - 1, end);
 
-                let html = ayatList.map(a => `<span class="hover:text-amber-600 transition">${a.text} <span class="text-amber-600 font-bold text-[18px]">﴿${a.numberInSurah}﴾</span></span>`).join(' ');
+                let html = ayatList.map(a => `<span id="modal-ayah-${a.numberInSurah}" class="p-1 inline-block transition">${a.text} <span class="text-amber-600 font-bold text-[18px]">﴿${a.numberInSurah}﴾</span></span>`).join(' ');
                 document.getElementById('tab-read-content').innerHTML = html;
 
                 let meaningsHtml = tafsirList.map(a => `
@@ -500,7 +526,8 @@
             }
         }
 
-        async function playAyatRange(surahId, start, end) {
+        // دالة تشغيل الصوت مع مزامنة وتظليل الآية الحالية تلقائياً
+        async function playAyatRangeWithSync(surahId, start, end, containerId) {
             const reciter = document.getElementById('reciter-select').value;
             try {
                 const res = await fetch(`https://api.alquran.cloud/v1/surah/${surahId}/${reciter}`);
@@ -509,10 +536,20 @@
                 
                 let index = 0;
                 function playNext() {
+                    document.querySelectorAll('.active-ayah').forEach(el => el.classList.remove('active-ayah'));
                     if (index < ayahs.length) {
-                        audioPlayer.src = ayahs[index].audio;
+                        let currentAyahObj = ayahs[index];
+                        audioPlayer.src = currentAyahObj.audio;
                         audioPlayer.play();
+                        
+                        let ayahElem = document.getElementById(`${containerId.includes('full') ? 'full-' : 'modal-'}ayah-${currentAyahObj.numberInSurah}`);
+                        if (ayahElem) {
+                            ayahElem.classList.add('active-ayah');
+                            ayahElem.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                        }
+
                         audioPlayer.onended = () => {
+                            if(ayahElem) ayahElem.classList.remove('active-ayah');
                             index++;
                             playNext();
                         };
@@ -530,6 +567,8 @@
             let baseUrl = "";
             if(reciter === 'ar.husary') baseUrl = `https://server11.mp3quran.net/husr/${padId}.mp3`;
             else if(reciter === 'ar.minshawi') baseUrl = `https://server10.mp3quran.net/minsh/${padId}.mp3`;
+            else if(reciter === 'ar.sudais') baseUrl = `https://server11.mp3quran.net/sds/${padId}.mp3`;
+            else if(reciter === 'ar.shuraym') baseUrl = `https://server7.mp3quran.net/shur/${padId}.mp3`;
             else baseUrl = `https://server8.mp3quran.net/afs/${padId}.mp3`;
 
             audioPlayer.src = baseUrl;
@@ -539,6 +578,48 @@
         function stopAudio() {
             audioPlayer.pause();
             audioPlayer.currentTime = 0;
+            document.querySelectorAll('.active-ayah').forEach(el => el.classList.remove('active-ayah'));
+        }
+
+        // وظائف نافذة المصحف الشريف الكامل الخارجي
+        function initFullQuranSurahSelect() {
+            const sel = document.getElementById('full-modal-surah-select');
+            sel.innerHTML = '';
+            fullQuranSurahs.forEach(s => {
+                const opt = document.createElement('option');
+                opt.value = s.id;
+                opt.textContent = `سورة ${s.name}`;
+                sel.appendChild(opt);
+            });
+        }
+
+        function openFullQuranModal() {
+            document.getElementById('full-quran-modal').classList.remove('hidden');
+            loadFullQuranSurah(1); // البدء بسورة الفاتحة افتراضياً
+        }
+
+        function closeFullQuranModal() {
+            document.getElementById('full-quran-modal').classList.add('hidden');
+            stopAudio();
+        }
+
+        async function loadFullQuranSurah(surahId) {
+            document.getElementById('full-modal-surah-select').value = surahId;
+            const container = document.getElementById('full-quran-content');
+            container.innerHTML = `<div class="animate-pulse flex items-center justify-center h-full text-amber-600 font-bold py-20">جاري تحميل السورة... ⏳</div>`;
+
+            try {
+                const res = await fetch(`https://api.alquran.cloud/v1/surah/${surahId}`);
+                const data = await res.json();
+                const ayatList = data.data.ayahs;
+
+                let html = `<div class="mb-4"><button onclick="playAyatRangeWithSync(${surahId}, 1, ${ayatList.length}, 'full-quran-content')" class="bg-amber-600 hover:bg-amber-700 text-white px-4 py-2 rounded-xl text-sm font-bold shadow">🎵 استماع للسورة كاملة مع التتبع</button></div>`;
+                html += ayatList.map(a => `<span id="full-ayah-${a.numberInSurah}" class="p-1 inline-block transition">${a.text} <span class="text-amber-600 font-bold text-[18px]">﴿${a.numberInSurah}﴾</span></span>`).join(' ');
+                
+                container.innerHTML = html;
+            } catch(e) {
+                container.innerHTML = `<div class="text-red-500 font-bold py-20">تعذر تحميل السورة. تأكد من اتصالك بالإنترنت.</div>`;
+            }
         }
 
         function switchTab(tab) {

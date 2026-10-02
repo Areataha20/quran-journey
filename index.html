@@ -42,11 +42,81 @@
             box-shadow: 0 0 10px rgba(234, 179, 8, 0.5);
             transition: all 0.3s ease;
         }
+        
+        /* أيقونة تطبيق ترتيل المستحدثة */
+        .tarteel-icon {
+            width: 20px;
+            height: 20px;
+            border-radius: 6px;
+            background: linear-gradient(135deg, #4ade80 0%, #06b6d4 100%);
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.15);
+            flex-shrink: 0;
+        }
+        .tarteel-symbol {
+            width: 12px;
+            height: 12px;
+            position: relative;
+        }
+        .tarteel-symbol::before, .tarteel-symbol::after {
+            content: '';
+            position: absolute;
+            background-color: #ffffff;
+            transform: rotate(45deg);
+            border-radius: 2px;
+        }
+        .tarteel-symbol::before {
+            width: 8px;
+            height: 8px;
+            top: 2px;
+            left: 0px;
+        }
+        .tarteel-symbol::after {
+            width: 5px;
+            height: 5px;
+            top: 3.5px;
+            right: -1px;
+        }
     </style>
 </head>
 <body class="min-h-screen bg-sky-scene flex flex-col justify-between overflow-x-hidden relative text-slate-800">
 
     <audio id="quran-player" preload="none"></audio>
+
+    <!-- نافذة تطبيق ترتيل المدمجة داخل البرنامج -->
+    <div id="tarteel-app-modal" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-2 md:p-4">
+        <div class="cloud rounded-3xl p-4 md:p-6 max-w-2xl w-full border-4 border-emerald-400 shadow-2xl relative max-h-[90vh] flex flex-col">
+            <button onclick="closeTarteelModal()" class="absolute top-4 left-4 w-10 h-10 bg-red-500 text-white font-bold rounded-full flex items-center justify-center text-xl shadow z-10">✕</button>
+            <div class="text-center mb-4 border-b-2 border-emerald-200 pb-3 flex items-center justify-center gap-3">
+                <div class="tarteel-icon !w-8 !h-8 !rounded-xl">
+                    <div class="tarteel-symbol !w-5 !h-5"></div>
+                </div>
+                <h3 class="text-2xl font-black text-emerald-900">برنامج ترتيل AI</h3>
+            </div>
+            
+            <div class="flex-1 overflow-y-auto p-4 bg-emerald-50/80 rounded-2xl border border-emerald-200 flex flex-col items-center justify-center text-center gap-4">
+                <div class="w-16 h-16 tarteel-icon !rounded-2xl shadow-lg">
+                    <div class="tarteel-symbol !w-10 !h-10"></div>
+                </div>
+                <h4 class="text-xl font-bold text-slate-800">خدمة التلاوة والترتيل الذكي</h4>
+                <p class="text-sm text-slate-600 max-w-md leading-relaxed">استمع وراجع تلاوتك باستخدام التقنيات التفاعلية المباشرة داخل رحلتك الحالية.</p>
+                
+                <div class="w-full max-w-md bg-white p-4 rounded-xl border border-emerald-200 shadow-sm flex flex-col gap-3 mt-2">
+                    <input type="text" id="tarteel-search-input" placeholder="اكتب اسم السورة أو ابدأ التلاوة..." class="w-full bg-emerald-50/50 border-2 border-emerald-300 rounded-xl p-2.5 text-sm text-right outline-none focus:border-emerald-500">
+                    <button onclick="alert('جاري بدء الاستماع والتحليل الصوت المباشر...')" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-2.5 rounded-xl shadow flex items-center justify-center gap-2">
+                        <span>🎙️</span> بدء المتابعة المباشرة
+                    </button>
+                </div>
+
+                <div class="pt-3 border-t border-emerald-200 w-full max-w-md flex justify-between items-center text-xs text-slate-500">
+                    <span>فتح التطبيق المستقل؟</span>
+                    <button onclick="openTarteelExternal(event)" class="text-emerald-700 font-bold underline hover:text-emerald-900">الانتقال لمتجر التطبيقات ↗</button>
+                </div>
+            </div>
+        </div>
+    </div>
 
     <!-- نافذة المصحف الكامل قراءة -->
     <div id="full-quran-modal" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-2 md:p-4">
@@ -234,9 +304,13 @@
                 <button onclick="openReviewModal()" class="cloud rounded-2xl p-2.5 px-3 shadow-lg flex items-center gap-1.5 border-2 border-white font-bold text-emerald-800 text-xs hover:bg-amber-50 transition">
                     <span>🔄</span> المراجعة
                 </button>
-                <a href="#" onclick="openTarteelApp(event)" class="cloud rounded-2xl p-2.5 px-3 shadow-lg flex items-center gap-1.5 border-2 border-white font-bold text-sky-700 text-xs hover:bg-sky-50 transition" title="فتح برنامج ترتيل أو التحميل من المتجر">
-                    <span>📱</span> ترتيل
-                </a>
+                <!-- زر ترتيل المعدل بدعم الأيقونة الرسمية والفتح الداخلي -->
+                <button onclick="openTarteelModal()" class="cloud rounded-2xl p-2.5 px-3 shadow-lg flex items-center gap-1.5 border-2 border-white font-bold text-emerald-700 text-xs hover:bg-emerald-50 transition" title="فتح برنامج ترتيل داخل البرنامج">
+                    <div class="tarteel-icon">
+                        <div class="tarteel-symbol"></div>
+                    </div>
+                    <span>ترتيل</span>
+                </button>
             </div>
         </div>
     </header>
@@ -355,8 +429,17 @@
             initFullQuranSurahSelect();
         };
 
-        function openTarteelApp(event) {
-            event.preventDefault();
+        /* فتح وإغلاق نافذة تطبيق ترتيل الداخلية */
+        function openTarteelModal() {
+            document.getElementById('tarteel-app-modal').classList.remove('hidden');
+        }
+
+        function closeTarteelModal() {
+            document.getElementById('tarteel-app-modal').classList.add('hidden');
+        }
+
+        function openTarteelExternal(event) {
+            if (event) event.preventDefault();
             const userAgent = navigator.userAgent || navigator.vendor || window.opera;
             const playStoreLink = "https://play.google.com/store/apps/details?id=com.tarteel.ai";
             const appStoreLink = "https://apps.apple.com/app/tarteel-ai/id1393699074";
@@ -526,7 +609,6 @@
             }
         }
 
-        // دالة تشغيل الصوت مع مزامنة وتظليل الآية الحالية تلقائياً
         async function playAyatRangeWithSync(surahId, start, end, containerId) {
             const reciter = document.getElementById('reciter-select').value;
             try {
@@ -581,7 +663,6 @@
             document.querySelectorAll('.active-ayah').forEach(el => el.classList.remove('active-ayah'));
         }
 
-        // وظائف نافذة المصحف الشريف الكامل الخارجي
         function initFullQuranSurahSelect() {
             const sel = document.getElementById('full-modal-surah-select');
             sel.innerHTML = '';
@@ -595,7 +676,7 @@
 
         function openFullQuranModal() {
             document.getElementById('full-quran-modal').classList.remove('hidden');
-            loadFullQuranSurah(1); // البدء بسورة الفاتحة افتراضياً
+            loadFullQuranSurah(1);
         }
 
         function closeFullQuranModal() {
